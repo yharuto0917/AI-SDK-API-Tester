@@ -1,0 +1,31 @@
+import type { StreamdownTranslations } from 'streamdown'
+
+/** Markdown 描画（Streamdown）が持つ UI 文言の日本語版。コードブロックの「コピー」などに使われる。 */
+export const STREAMDOWN_TRANSLATIONS: Partial<StreamdownTranslations> = {
+  close: '閉じる',
+  copied: 'コピーしました',
+  copyCode: 'コードをコピー',
+  copyLink: 'リンクをコピー',
+  copyTable: '表をコピー',
+  copyTableAsCsv: 'CSV としてコピー',
+  copyTableAsMarkdown: 'Markdown としてコピー',
+  copyTableAsTsv: 'TSV としてコピー',
+  downloadDiagram: '図をダウンロード',
+  downloadDiagramAsMmd: 'MMD としてダウンロード',
+  downloadDiagramAsPng: 'PNG としてダウンロード',
+  downloadDiagramAsSvg: 'SVG としてダウンロード',
+  downloadFile: 'ファイルをダウンロード',
+  downloadImage: '画像をダウンロード',
+  downloadTable: '表をダウンロード',
+  downloadTableAsCsv: 'CSV としてダウンロード',
+  downloadTableAsMarkdown: 'Markdown としてダウンロード',
+  exitFullscreen: '全画面を終了',
+  externalLinkWarning: '外部サイトへ移動します',
+  imageNotAvailable: '画像を表示できません',
+  openExternalLink: '外部リンクを開く',
+  openLink: 'リンクを開く',
+  resetView: '表示をリセット',
+  viewFullscreen: '全画面で表示',
+  zoomIn: '拡大',
+  zoomOut: '縮小',
+}

@@ -1,0 +1,8 @@
+node_modules
+dist
+pnpm-lock.yaml
+.claude
+# shadcn/ui と AI Elements のベンダー済みソース（CLI で更新する前提のため整形しない）
+src/components/ui
+src/components/ai-elements
+components.json

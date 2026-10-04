@@ -1,0 +1,21 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "app",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "dev"
+      ],
+      "port": 5199
+    },
+    {
+      "name": "mock",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "mock"
+      ],
+      "port": 28787
+    }
+  ]
+}
