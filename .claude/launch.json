@@ -16,6 +16,14 @@
         "mock"
       ],
       "port": 28787
+    },
+    {
+      "name": "cf-preview",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "cf:preview"
+      ],
+      "port": 28788
     }
   ]
 }

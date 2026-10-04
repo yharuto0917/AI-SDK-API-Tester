@@ -1,0 +1,76 @@
+name: CI/CD
+
+# PR と main / dev への push で検証し、main への push（と main での手動実行）だけ Cloudflare へデプロイする。
+# デプロイには Secrets の CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID が必要（README「Cloudflare へのデプロイ」参照）。
+on:
+  pull_request:
+  push:
+    branches: [main, dev]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # 同じブランチ・PR に新しい push が来たら、古い検証は止める
+    concurrency:
+      group: check-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v7
+
+      # pnpm のバージョンは package.json の packageManager に従う
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          # README の動作要件（Node.js 22.18 以上）を満たす 22 系の最新
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # typecheck → lint → format:check → test
+      - run: pnpm check
+
+      - run: pnpm build
+
+      # wrangler.jsonc と dist/ がデプロイ可能な形か確認する（アップロードはしない）
+      - run: pnpm exec wrangler deploy --dry-run
+
+  deploy:
+    name: Deploy to Cloudflare
+    needs: check
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: production
+    # デプロイは 1 本ずつ。実行中のデプロイを新しい push で打ち切らない
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # トークンはビルドに渡さず、デプロイのステップだけに渡す
+      - run: pnpm build
+
+      - name: Deploy
+        run: pnpm exec wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

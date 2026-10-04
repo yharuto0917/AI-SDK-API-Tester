@@ -1,0 +1,7 @@
+# 依存パッケージのインストールスクリプト（postinstall）の許可リスト。
+# wrangler が依存する esbuild / workerd は、ネイティブバイナリを optionalDependencies 経由で
+# 取得するため postinstall なしでも動く。サプライチェーンのリスクを避けるため実行しない。
+# （wrangler deploy は静的アセットのアップロードだけで、どちらも使わない）
+allowBuilds:
+  esbuild: false
+  workerd: false

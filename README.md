@@ -26,7 +26,7 @@
 
 ## 2. クイックスタート
 
-必要なもの: Node.js 22.18 以上と [pnpm](https://pnpm.io)。
+必要なもの: Node.js 22.18 以上と [pnpm](https://pnpm.io) 11（`package.json` の `packageManager` で固定しています）。
 
 - `ai@7` / `@ai-sdk/react@4` が Node.js 22 以上を要求します
 - モックサーバーは `node mock-server/server.ts` で TypeScript を直接実行するため、型ストリップが標準で有効な 22.18 以上が必要です
@@ -434,26 +434,29 @@ curl -N -X POST "http://localhost:28787/api/chat?scenario=slow" -H "content-type
 - **追加ヘッダーに入れた `Authorization` や `x-api-key` の値は、`localStorage` に平文で保存されます。** Bearer トークンだけが `sessionStorage` です。保存を残したくない秘密は Bearer トークン欄に入れ、使い終わったら「設定をリセット」を押してください。追加ボディ・Raw のボディに入れた秘密も同じく `localStorage` に残ります
 - 通信ログはメモリにだけ置き、外部へは送りません。ログを JSON で保存するときは、「秘匿情報を表示」が OFF ならヘッダー・URL・本文の秘匿情報をマスクします（キー名にもとづく推定なので、共有前に内容を確認してください。詳しくは[秘匿情報のマスクと cURL](#秘匿情報のマスクと-curl)）
 - 接続先から返った内容（Markdown・画像・ソースの URL など）をそのまま描画します。信頼できないサーバーには接続しないでください
-- このアプリ自身には認証がなく、dev プロキシは任意の URL への踏み台になります。**本番環境・共有環境・LAN への公開は想定していません。** `pnpm build` の成果物を静的に配信しても、dev プロキシは含まれません
+- このアプリ自身には認証がなく、dev プロキシは任意の URL への踏み台になります。**本番環境・共有環境・LAN への公開は想定していません。** `pnpm build` の成果物を静的に配信しても、dev プロキシは含まれません（[Cloudflare へのデプロイ](#cloudflare-へのデプロイ)もこの静的な成果物だけで、プロキシ用の Worker は置いていません）
 - 共有 PC や画面共有では、「秘匿情報を表示」を OFF のままにしてください
 
 ## 9. 開発
 
 ### スクリプト
 
-| コマンド            | 内容                                                           |
-| ------------------- | -------------------------------------------------------------- |
-| `pnpm dev`          | 開発サーバー（Vite。既定 5199。dev プロキシつき）              |
-| `pnpm mock`         | モックバックエンド（`node mock-server/server.ts`。既定 28787） |
-| `pnpm build`        | 型チェック（`tsc -b`）のあと `vite build`（出力は `dist/`）    |
-| `pnpm preview`      | ビルド結果の確認（dev プロキシつき）                           |
-| `pnpm typecheck`    | `tsc -b`                                                       |
-| `pnpm lint`         | `oxlint`                                                       |
-| `pnpm format`       | `prettier --write .`                                           |
-| `pnpm format:check` | `prettier --check .`                                           |
-| `pnpm test`         | `vitest run`（全テスト）                                       |
-| `pnpm test:watch`   | `vitest`（監視モード）                                         |
-| `pnpm check`        | `typecheck` → `lint` → `format:check` → `test` を順に実行      |
+| コマンド                 | 内容                                                             |
+| ------------------------ | ---------------------------------------------------------------- |
+| `pnpm dev`               | 開発サーバー（Vite。既定 5199。dev プロキシつき）                |
+| `pnpm mock`              | モックバックエンド（`node mock-server/server.ts`。既定 28787）   |
+| `pnpm build`             | 型チェック（`tsc -b`）のあと `vite build`（出力は `dist/`）      |
+| `pnpm preview`           | ビルド結果の確認（dev プロキシつき）                             |
+| `pnpm cf:preview`        | ビルドして Workers の実行環境でローカル配信（既定 28788）        |
+| `pnpm cf:deploy`         | ビルドして Cloudflare へデプロイ（要認証。下記参照）             |
+| `pnpm cf:deploy:dry-run` | ビルドしてデプロイの検証だけ行う（アップロードしない・認証不要） |
+| `pnpm typecheck`         | `tsc -b`                                                         |
+| `pnpm lint`              | `oxlint`                                                         |
+| `pnpm format`            | `prettier --write .`                                             |
+| `pnpm format:check`      | `prettier --check .`                                             |
+| `pnpm test`              | `vitest run`（全テスト）                                         |
+| `pnpm test:watch`        | `vitest`（監視モード）                                           |
+| `pnpm check`             | `typecheck` → `lint` → `format:check` → `test` を順に実行        |
 
 変更したら `pnpm check` が通ることを確認してください。個別のテストは `pnpm exec vitest run <パス>` で実行できます。
 
@@ -467,7 +470,9 @@ curl -N -X POST "http://localhost:28787/api/chat?scenario=slow" -H "content-type
 .
 ├── mock-server/          AI SDK 互換のモックバックエンド（app.ts: HTTP / scenarios.ts: シナリオ / server.ts: CLI）
 ├── vite-plugins/         dev-proxy.ts（/__proxy。開発専用の CORS 回避プロキシ）
-├── .claude/launch.json   Claude Code のプレビュー設定（app: 5199 / mock: 28787）
+├── wrangler.jsonc        Cloudflare Workers（静的アセット）のデプロイ設定
+├── .github/workflows/    ci-cd.yml（検証と Cloudflare へのデプロイ）
+├── .claude/launch.json   Claude Code のプレビュー設定（app: 5199 / mock: 28787 / cf-preview: 28788）
 └── src/
     ├── types.ts          共有の型契約（設定・ネットワークログ・診断）
     ├── lib/              settings / settings-store、request-shaper、tester-fetch、network-log、
@@ -487,6 +492,46 @@ curl -N -X POST "http://localhost:28787/api/chat?scenario=slow" -H "content-type
 - テストは対象と同じ場所に `*.test.ts(x)` として置きます。`src/`・`vite-plugins/`・`mock-server/` が対象です
 - 既定の環境は `node` です。コンポーネントのテストは、ファイルの先頭に `// @vitest-environment jsdom` を付けて切り替えます
 - 実 HTTP のテストがあり、マシンが重いと遅くなるため、タイムアウトは 30 秒にしています
+
+### Cloudflare へのデプロイ
+
+`pnpm build` の成果物（`dist/`）を、[Workers の静的アセット](https://developers.cloudflare.com/workers/static-assets/)として配信します。Worker のスクリプトは無く、設定は `wrangler.jsonc` だけです。
+
+**GitHub Actions（`.github/workflows/ci-cd.yml`）**
+
+| きっかけ                       | 実行内容                                                                                |
+| ------------------------------ | --------------------------------------------------------------------------------------- |
+| Pull Request / `dev` への push | `pnpm check` → `pnpm build` → `wrangler deploy --dry-run`（検証のみ。デプロイしません） |
+| `main` への push               | 上と同じ検証に通ったら、`wrangler deploy` で本番（`production` environment）へデプロイ  |
+| Actions の「Run workflow」     | 同上（`main` を選んだときだけデプロイ。ほかのブランチでは検証のみ）                     |
+
+**初回セットアップ**（リポジトリの管理者が 1 回だけ行います）
+
+1. Cloudflare で API トークンを作る。「Edit Cloudflare Workers」テンプレートを使い、対象を自分のアカウントに絞ります
+2. アカウント ID を控える（ダッシュボードの「Workers & Pages」の概要ページ右側に表示されます）
+3. GitHub の **Settings › Secrets and variables › Actions** に `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` を登録する。ワークフローは `production` environment を使うので、Environment secrets に置いてもかまいません（Required reviewers を付けると、デプロイ前に承認を挟めます）
+4. アカウントに `workers.dev` のサブドメインが未登録なら、先にダッシュボードか手元の `pnpm cf:deploy` で登録する（CI は対話できないため、未登録だとデプロイが失敗します）
+
+公開 URL は `https://ai-sdk-api-tester.<サブドメイン>.workers.dev` です。Worker 名は `wrangler.jsonc` の `name` で変えられます（同じ名前の既存 Worker があると上書きされるので注意してください）。
+
+**手元で試す**
+
+```bash
+# ビルドして Workers の実行環境でローカル配信（http://localhost:28788。Cloudflare にはつながりません）
+pnpm cf:preview
+
+# デプロイの検証だけ行う（認証不要）
+pnpm cf:deploy:dry-run
+
+# 手元から本番へデプロイする（`pnpm exec wrangler login` 済み、または CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID を設定済み）
+pnpm cf:deploy
+```
+
+**デプロイ先での制約**
+
+- dev プロキシは含まれません（[6. dev プロキシ](#6-dev-プロキシ)）。「devプロキシ経由で送信」は使えず、バッジは「利用不可」になります。バックエンド側で CORS を許可して、直接接続してください。**プロキシ用の Worker を足さないでください。** 任意の URL への踏み台になります
+- 既定のエンドポイントはモックサーバー（`localhost:28787`）を指します。デプロイ先から試すときは、手元で `pnpm mock` を起動してください。HTTPS のページから `http://` のエンドポイントへ送ると、混在コンテンツとしてブロックされることがあります（ブラウザによっては、ローカルネットワークへのアクセス許可を求められます）
+- このアプリ自身には認証がありません。公開 URL になるので、使う人を限りたいときは Cloudflare Access などで保護してください
 
 ### ベンダーコードの更新
 
