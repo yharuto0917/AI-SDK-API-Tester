@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // 初回デプロイ時に Workers 上へ作られる名前（URL は https://ai-sdk-api-tester.<サブドメイン>.workers.dev）
+  "name": "ai-sdk-api-tester",
+  "compatibility_date": "2026-10-04",
+  // Worker のスクリプトは持たない静的アセット専用の構成。`pnpm build` の出力（dist/）をそのまま配信する
+  "assets": {
+    "directory": "./dist",
+    // クライアントサイドのルーターが無い単一ページなので、SPA フォールバック（未知のパスに index.html を返す）は使わない。
+    // 未知のパスは 404 にして、/__proxy（dev 専用で本番には無い）の有無を診断が正しく判定できるようにする
+    "not_found_handling": "none",
+  },
+  "dev": {
+    // 他プロジェクトの wrangler dev（既定 8787）と衝突しにくい固定ポート。モックサーバー（28787）の隣
+    "port": 28788,
+  },
+}
